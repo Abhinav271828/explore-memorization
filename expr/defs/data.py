@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 class LMData(Dataset):
-    def __init__(self, filename, split):
+    def __init__(self, filename, size, split):
         self.split = split
 
         self.ctoi = {c: i for i, c in enumerate('0123456789()-+*/BEP')}
@@ -14,9 +14,9 @@ class LMData(Dataset):
         max_len = 0
 
         match(split):
-            case 'train': dataset_size = 800000
-            case 'dev': dataset_size = 100000
-            case 'test': dataset_size = 100000
+            case 'train': dataset_size = int(0.8 * size)
+            case 'dev': dataset_size = int(0.1 * size)
+            case 'test': dataset_size = int(0.1 * size)
 
         n = 0
         with open(filename, 'r') as f:
