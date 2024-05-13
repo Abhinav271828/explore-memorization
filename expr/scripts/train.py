@@ -19,7 +19,10 @@ for size in [1e3, 1e4, 1e5, 1e6]:
     model_checkpoint = ModelCheckpoint(monitor='val_loss', save_top_k=-1, dirpath='models/', filename=f'size={size}.ckpt')
 
     logger = WandbLogger(project="Memorization (Prelim)", name=f'size={size}', config=config)
+    logger.experiment.config.update({'size': size})
 
     trainer = Trainer(max_epochs=100, callbacks=[early_stopping, model_checkpoint], logger=logger)
     trainer.fit(model, train_dl, dev_dl)
     trainer.test(model, test_dl)
+
+    logger.experiment.finish()
