@@ -74,3 +74,11 @@ class TransformerLMLightning(LightningModule):
         loss = self.criterion(output.view(-1, output.size(-1)), tgt.view(-1))
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
+
+    def test_step(self, batch: Tensor, batch_idx: int) -> Tensor:
+        src, tgt = batch
+        src_mask = nn.Transformer.generate_square_subsequent_mask(len(src))
+        output = self.model(src, src_mask)
+        loss = self.criterion(output.view(-1, output.size(-1)), tgt.view(-1))
+        self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        return loss
