@@ -46,6 +46,25 @@ class TransformerLM(nn.Module):
         output = self.transformer_encoder(src, src_mask)
         output = self.linear(output)
         return output
+    
+    def complete_sequence(self, src: Tensor, length: int):
+        """
+        Complete the sequence given by `src` with `length` elements.
+        If `src` is batched, return a whole batch of predictions.
+        """
+        src_ = src.unsqueeze(0) if len(src.shape) == 1 else src
+        # src_ : [bz, seq]
+
+        # We only work with src_ from now on. `src` is the original input.
+        while src_.size(1) < src.size(-1) + length:
+            src_mask = nn.Transformer.generate_square_subsequent_mask(len(src_))
+            outputs = self(src_, src_mask)
+            # [bz, seq, ntoken]
+            preds = outputs[:, -1:, :].argmax(dim=-1)
+            # [bz, 1]
+            src_ = torch.concat([src_, preds], dim=1)
+        
+        return src_
 
 class TransformerLMLightning(LightningModule):
     def __init__(self, ntoken: int = 20, d_model: int = 64, nhead: int = 2, d_hid: int = 256,
