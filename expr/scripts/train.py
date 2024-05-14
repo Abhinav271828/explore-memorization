@@ -18,6 +18,6 @@ for size in [1e3, 1e4, 1e5]:
     trainer = Trainer(max_epochs=100, callbacks=[early_stopping, model_checkpoint], logger=logger)
     trainer.fit(model)
     trainer.test(model)
-    torch.save(model.train_data, f'../datasets/size={size}.pt')
+    torch.save(model.train_data, f'datasets/size={size}.pt')
 
     logger.experiment.finish()
