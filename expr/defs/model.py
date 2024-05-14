@@ -48,16 +48,17 @@ class TransformerLM(nn.Module):
         return output
 
 class TransformerLMLightning(LightningModule):
-    def __init__(self, ntoken: int, d_model: int, nhead: int, d_hid: int,
-                 nlayers: int, dropout: float = 0.5, dataset_size : int = 1000):
+    def __init__(self, ntoken: int = 20, d_model: int = 64, nhead: int = 2, d_hid: int = 256,
+                 nlayers: int = 3, dropout: float = 0.5, dataset_size : int = 10, from_pretrained : bool = True):
         super().__init__()
         self.model = TransformerLM(ntoken, d_model, nhead, d_hid, nlayers, dropout)
 
-        self.train_data = LMData('data/base-data.txt', dataset_size, 'train')
-        self.dev_data = LMData('data/base-data.txt', dataset_size, 'dev')
-        self.test_data = LMData('data/base-data.txt', dataset_size, 'test')
+        if not from_pretrained:
+            self.train_data = LMData('data/base-data.txt', dataset_size, 'train')
+            self.dev_data = LMData('data/base-data.txt', dataset_size, 'dev')
+            self.test_data = LMData('data/base-data.txt', dataset_size, 'test')
 
-        self.criterion = nn.CrossEntropyLoss(ignore_index=self.train_data.pad)
+            self.criterion = nn.CrossEntropyLoss(ignore_index=self.train_data.pad)
 
     def train_dataloader(self):
         return DataLoader(self.train_data, batch_size=32, shuffle=True)
