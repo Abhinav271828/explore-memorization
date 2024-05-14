@@ -67,7 +67,7 @@ class TransformerLM(nn.Module):
         return src_
 
 class TransformerLMLightning(LightningModule):
-    def __init__(self, ntoken: int = 20, d_model: int = 64, nhead: int = 2, d_hid: int = 256,
+    def __init__(self, ntoken: int = 19, d_model: int = 64, nhead: int = 2, d_hid: int = 256,
                  nlayers: int = 3, dropout: float = 0.5, dataset_size : int = 10, from_pretrained : bool = True):
         super().__init__()
         self.model = TransformerLM(ntoken, d_model, nhead, d_hid, nlayers, dropout)
