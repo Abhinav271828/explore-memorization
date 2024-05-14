@@ -1,10 +1,11 @@
 import torch
-from torch import Tensor
-from torch import nn
+from torch import Tensor, nn
+from torch.utils.data import DataLoader
 from lightning import LightningModule
 import math
 
 from utils import PositionalEncoding
+from defs.data import LMData
 
 class TransformerLM(nn.Module):
     def __init__(self, ntoken: int, d_model: int, nhead: int, d_hid: int,
@@ -48,10 +49,22 @@ class TransformerLM(nn.Module):
 
 class TransformerLMLightning(LightningModule):
     def __init__(self, ntoken: int, d_model: int, nhead: int, d_hid: int,
-                 nlayers: int, dropout: float = 0.5):
+                 nlayers: int, dropout: float = 0.5, dataset_size : int = 1000):
         super().__init__()
         self.model = TransformerLM(ntoken, d_model, nhead, d_hid, nlayers, dropout)
-        self.criterion = nn.CrossEntropyLoss()
+
+        self.train_data = LMData('data/base-data.txt', dataset_size, 'train')
+        self.dev_data = LMData('data/base-data.txt', dataset_size, 'dev')
+        self.test_data = LMData('data/base-data.txt', dataset_size, 'test')
+
+        self.criterion = nn.CrossEntropyLoss(ignore_index=self.train_data.pad)
+
+    def train_dataloader(self):
+        return DataLoader(self.train_data, batch_size=32, shuffle=True)
+    def val_dataloader(self):
+        return DataLoader(self.dev_data, batch_size=32)
+    def test_dataloader(self):
+        return DataLoader(self.test_data, batch_size=32)
 
     def forward(self, src: Tensor, src_mask: Tensor = None) -> Tensor:
         return self.model(src, src_mask)
