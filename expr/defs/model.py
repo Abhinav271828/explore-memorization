@@ -15,7 +15,7 @@ class TransformerLM(nn.Module):
         self.model_type = 'Transformer'
         self.pos_encoder = PositionalEncoding(d_model, dropout)
         self.embedding = nn.Embedding(ntoken, d_model)
-        encoder_layers = nn.TransformerEncoderLayer(d_model, nhead, d_hid, dropout)
+        encoder_layers = nn.TransformerEncoderLayer(d_model, nhead, d_hid, dropout, batch_first=True)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, nlayers)
         self.d_model = d_model
         self.linear = nn.Linear(d_model, ntoken)
@@ -31,11 +31,11 @@ class TransformerLM(nn.Module):
     def forward(self, src: Tensor, src_mask: Tensor = None) -> Tensor:
         """
         Arguments:
-            src: Tensor, shape ``[seq_len, batch_size]``
+            src: Tensor, shape ``[batch_size, seq_len]``
             src_mask: Tensor, shape ``[seq_len, seq_len]``
 
         Returns:
-            output Tensor of shape ``[seq_len, batch_size, ntoken]``
+            output Tensor of shape ``[batch_size, seq_len, ntoken]``
         """
         src = self.embedding(src) * math.sqrt(self.d_model)
         src = self.pos_encoder(src)
@@ -43,12 +43,12 @@ class TransformerLM(nn.Module):
             """Generate a square causal mask for the sequence. The masked positions are filled with float('-inf').
             Unmasked positions are filled with float(0.0).
             """
-            src_mask = nn.Transformer.generate_square_subsequent_mask(len(src))
+            src_mask = nn.Transformer.generate_square_subsequent_mask(src.shape[1])
         output = self.transformer_encoder(src, src_mask)
         output = self.linear(output)
         return output
     
-    def complete_sequence(self, src: Tensor, length: int):
+    def complete_sequence(self, src: Tensor, length: int, argmax=False):
         """
         Complete the sequence given by `src` with `length` elements.
         If `src` is batched, return a whole batch of predictions.
@@ -58,11 +58,13 @@ class TransformerLM(nn.Module):
 
         # We only work with src_ from now on. `src` is the original input.
         while src_.size(1) < src.size(-1) + length:
-            src_mask = nn.Transformer.generate_square_subsequent_mask(len(src_))
-            outputs = self(src_, src_mask)
+            outputs = self(src_)
             # [bz, seq, ntoken]
-            probabilities = F.softmax(outputs[:, -1, :], dim=-1)
-            preds = torch.multinomial(probabilities, 1)
+            if not argmax:
+                probabilities = F.softmax(outputs[:, -1, :], dim=-1)
+                preds = torch.multinomial(probabilities, 1)
+            else:
+                preds = torch.argmax(outputs[-1:, :, :], dim=-1)
             # [bz, 1]
             src_ = torch.concat([src_, preds], dim=1)
         
@@ -93,8 +95,7 @@ class TransformerLMLightning(LightningModule):
 
     def training_step(self, batch: Tensor, batch_idx: int) -> Tensor:
         src, tgt = batch
-        src_mask = nn.Transformer.generate_square_subsequent_mask(len(src))
-        output = self.model(src, src_mask)
+        output = self.model(src)
         loss = self.criterion(output.view(-1, output.size(-1)), tgt.view(-1))
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
@@ -104,16 +105,14 @@ class TransformerLMLightning(LightningModule):
 
     def validation_step(self, batch: Tensor, batch_idx: int) -> Tensor:
         src, tgt = batch
-        src_mask = nn.Transformer.generate_square_subsequent_mask(len(src))
-        output = self.model(src, src_mask)
+        output = self.model(src)
         loss = self.criterion(output.view(-1, output.size(-1)), tgt.view(-1))
         self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def test_step(self, batch: Tensor, batch_idx: int) -> Tensor:
         src, tgt = batch
-        src_mask = nn.Transformer.generate_square_subsequent_mask(len(src))
-        output = self.model(src, src_mask)
+        output = self.model(src)
         loss = self.criterion(output.view(-1, output.size(-1)), tgt.view(-1))
         self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
