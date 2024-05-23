@@ -23,3 +23,10 @@ class PositionalEncoding(nn.Module):
         """
         x = x + self.pe[:, :x.size(1)]
         return self.dropout(x)
+
+def get_name_from_config(config):
+    """
+    Convert a config dict to the string under which the corresponding
+    models and datasets will be saved.
+    """
+    return f'd_model={config["d_model"]}-nhead={config["nhead"]}-nlayers={config["nlayers"]}-size={config['size']}'
