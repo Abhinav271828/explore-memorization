@@ -1,6 +1,7 @@
 import torch
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 from lightning import LightningModule
 import math
 
@@ -60,7 +61,8 @@ class TransformerLM(nn.Module):
             src_mask = nn.Transformer.generate_square_subsequent_mask(len(src_))
             outputs = self(src_, src_mask)
             # [bz, seq, ntoken]
-            preds = outputs[:, -1:, :].argmax(dim=-1)
+            probabilities = F.softmax(outputs[:, -1, :], dim=-1)
+            preds = torch.multinomial(probabilities, 1)
             # [bz, 1]
             src_ = torch.concat([src_, preds], dim=1)
         
