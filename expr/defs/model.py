@@ -75,6 +75,7 @@ class TransformerLMLightning(LightningModule):
                  nlayers: int = 3, dropout: float = 0.5, dataset_size : int = 10, from_pretrained : bool = True):
         super().__init__()
         self.model = TransformerLM(ntoken, d_model, nhead, d_hid, nlayers, dropout)
+        self.save_hyperparameters()
 
         if not from_pretrained:
             self.train_data = LMData('data/base-data.txt', dataset_size, 'train')
