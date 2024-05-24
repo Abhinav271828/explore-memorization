@@ -64,7 +64,7 @@ class TransformerLM(nn.Module):
                 probabilities = F.softmax(outputs[:, -1, :], dim=-1)
                 preds = torch.multinomial(probabilities, 1)
             else:
-                preds = torch.argmax(outputs[-1:, :, :], dim=-1)
+                preds = torch.argmax(outputs[:, -1:, :], dim=-1)
             # [bz, 1]
             src_ = torch.concat([src_, preds], dim=1)
         

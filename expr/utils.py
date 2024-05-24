@@ -29,4 +29,4 @@ def get_name_from_config(config):
     Convert a config dict to the string under which the corresponding
     models and datasets will be saved.
     """
-    return f'd_model={config["d_model"]}-nhead={config["nhead"]}-nlayers={config["nlayers"]}-size={config['size']}'
+    return f'd_model={config["d_model"]}-nhead={config["nhead"]}-nlayers={config["nlayers"]}-size={config["dataset_size"]}'
